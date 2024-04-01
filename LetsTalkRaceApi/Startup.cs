@@ -1,7 +1,11 @@
+using System.Text;
 using LetsTalkRaceApi.Data;
 using LetsTalkRaceApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.Filters;
 
 namespace LetsTalkRaceApi;
 
@@ -29,8 +33,28 @@ public class Startup
 
         services.AddSwaggerGen(c =>
         {
-            c.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });
+            c.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Scheme = "bearer"
+            });
+            c.OperationFilter<AuthenticationRequirementsOperationFilter>();
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
         });
+
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetSection("AppSettings:Token").Value)),
+                    ValidateIssuer = false,
+                    ValidateAudience = false
+                };
+            });
         
         services.AddControllersWithViews();
         services.AddRazorPages();

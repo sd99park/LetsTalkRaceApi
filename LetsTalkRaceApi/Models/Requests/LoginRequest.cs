@@ -1,4 +1,4 @@
-namespace LetsTalkRaceApi.Models;
+namespace LetsTalkRaceApi.Models.Requests;
 
 public class LoginRequest
 {
