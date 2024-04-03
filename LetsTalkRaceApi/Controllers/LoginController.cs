@@ -11,22 +11,22 @@ using Microsoft.IdentityModel.Tokens;
 namespace LetsTalkRaceApi.Controllers;
 
 [ApiController]
-[Route("api/login")] // [controller] = Login, it strips "controller off of class name
-public class LoginController : ControllerBase
+[Route("api/login/v1")]
+public class LoginController : LtrControllerBase
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IConfiguration _config;
-    
-    public LoginController(IConfiguration config, SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager)
+
+    public LoginController(IConfiguration config, SignInManager<ApplicationUser> signInManager,
+        UserManager<ApplicationUser> userManager) : base(config)
     {
-        _config = config;
         _signInManager = signInManager;
         _userManager = userManager;
     }
 
+
     [HttpPost]
-    [Route("v1/login")]
+    [Route("login")]
     [ProducesResponseType(typeof(string), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
@@ -44,7 +44,7 @@ public class LoginController : ControllerBase
         return Ok(CreateJwtToken(user));
     }
     
-    [HttpPost("v1/register")]
+    [HttpPost("register")]
     [ProducesResponseType(typeof(string), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
@@ -71,7 +71,7 @@ public class LoginController : ControllerBase
         return Ok(CreateJwtToken(createdUser));
     }
     
-    [HttpPost("v1/user/{identityId}/updateEmail"), Authorize]
+    [HttpPost("user/{identityId}/updateEmail"), Authorize]
     [ProducesResponseType(typeof(IdentityResponseDTO), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
@@ -91,7 +91,7 @@ public class LoginController : ControllerBase
         return Ok(new IdentityResponseDTO(user));
     }
 
-    [HttpPost("v1/user/{identityId}/updateUserName"), Authorize]
+    [HttpPost("user/{identityId}/updateUserName"), Authorize]
     [ProducesResponseType(typeof(IdentityResponseDTO), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
@@ -109,7 +109,7 @@ public class LoginController : ControllerBase
         return Ok(new IdentityResponseDTO(user));
     }
 
-    [HttpPost("v1/user/{identityId}/updatePassword"), Authorize]
+    [HttpPost("user/{identityId}/updatePassword"), Authorize]
     [ProducesResponseType(typeof(IdentityResponseDTO), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
@@ -138,6 +138,8 @@ public class LoginController : ControllerBase
         user = await _userManager.FindByIdAsync(identityId);
         return Ok(new IdentityResponseDTO(user));
     }
+    
+    // TODO: Add Delete endpoint
     
     private string CreateJwtToken(ApplicationUser user)
     {
