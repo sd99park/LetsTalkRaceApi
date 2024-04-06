@@ -121,45 +121,6 @@ public class HomeworkController : LtrControllerBase
         }
     }
     
-    [HttpPost]
-    [Route("removeHomework")]
-    [ProducesResponseType(typeof(string), 201)]
-    [ProducesResponseType(typeof(BadRequestResult), 400)]
-    [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
-    public async Task<IActionResult> RemoveHomework([FromBody] string homeworkId)
-    {
-        NpgsqlConnection conn = null;
-        NpgsqlTransaction npgsqlTrans = null;
-
-        try
-        {
-            conn = OpenConnection();
-            npgsqlTrans = conn.BeginTransaction();
-            
-            conn = OpenConnection();
-
-            var cmd = PostgresCommandHelper.DeleteHomework(conn, homeworkId);
-            cmd.Transaction = npgsqlTrans;
-
-            var rowsAffected = cmd.ExecuteNonQuery();
-            if (rowsAffected != 1)
-            {
-                throw new Exception($"Unexpected exception deleting from Homework table. Affected Rows: {rowsAffected}");
-            }
-            
-            return Ok("Successfully deleted homework");
-        }
-        catch (Exception e)
-        {
-            npgsqlTrans?.Rollback();
-            throw new Exception(e.Message);
-        }
-        finally
-        {
-            CloseConnection(conn);
-        }
-    }
-    
     // Not to be used on FE, use for mass upload on initial create
     [HttpPost]
     [Route("addMultipleHomework")]
@@ -203,4 +164,44 @@ public class HomeworkController : LtrControllerBase
             CloseConnection(conn);
         }
     }
+    
+    [HttpDelete]
+    [Route("removeHomework")]
+    [ProducesResponseType(typeof(string), 201)]
+    [ProducesResponseType(typeof(BadRequestResult), 400)]
+    [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
+    public async Task<IActionResult> RemoveHomework([FromBody] string homeworkId)
+    {
+        NpgsqlConnection conn = null;
+        NpgsqlTransaction npgsqlTrans = null;
+
+        try
+        {
+            conn = OpenConnection();
+            npgsqlTrans = conn.BeginTransaction();
+            
+            conn = OpenConnection();
+
+            var cmd = PostgresCommandHelper.DeleteHomework(conn, homeworkId);
+            cmd.Transaction = npgsqlTrans;
+
+            var rowsAffected = cmd.ExecuteNonQuery();
+            if (rowsAffected != 1)
+            {
+                throw new Exception($"Unexpected exception deleting from Homework table. Affected Rows: {rowsAffected}");
+            }
+            
+            return Ok("Successfully deleted homework");
+        }
+        catch (Exception e)
+        {
+            npgsqlTrans?.Rollback();
+            throw new Exception(e.Message);
+        }
+        finally
+        {
+            CloseConnection(conn);
+        }
+    }
+    
 }

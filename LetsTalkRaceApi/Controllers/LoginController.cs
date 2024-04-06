@@ -23,8 +23,7 @@ public class LoginController : LtrControllerBase
         _signInManager = signInManager;
         _userManager = userManager;
     }
-
-
+    
     [HttpPost]
     [Route("login")]
     [ProducesResponseType(typeof(string), 201)]
@@ -69,6 +68,17 @@ public class LoginController : LtrControllerBase
         
         var createdUser = await _userManager.FindByEmailAsync(user.UserName);
         return Ok(CreateJwtToken(createdUser));
+    }
+    
+    [HttpGet, Authorize]
+    [Route("user/{identityId}")]
+    [ProducesResponseType(typeof(IdentityResponseDTO), 201)]
+    [ProducesResponseType(typeof(BadRequestResult), 400)]
+    [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
+    public async Task<IActionResult> GetIdentity(string identityId)
+    {
+        var user = await _userManager.FindByIdAsync(identityId);
+        return Ok(new IdentityResponseDTO(user));
     }
     
     [HttpPost("user/{identityId}/updateEmail"), Authorize]
@@ -138,8 +148,23 @@ public class LoginController : LtrControllerBase
         user = await _userManager.FindByIdAsync(identityId);
         return Ok(new IdentityResponseDTO(user));
     }
-    
-    // TODO: Add Delete endpoint
+
+    [HttpDelete("user/{identityId}/deleteUser"), Authorize]
+    [ProducesResponseType(typeof(string), 201)]
+    [ProducesResponseType(typeof(BadRequestResult), 400)]
+    [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
+    public async Task<IActionResult> DeleteIdentity(string identityId)
+    {
+        var user = await _userManager.FindByIdAsync(identityId);
+
+        var result = await _userManager.DeleteAsync(user);
+        if (!result.Succeeded)
+        {
+            throw new Exception("There was an error updating identity Password");
+        }
+        
+        return Ok("Identity successfully deleted");
+    }
     
     private string CreateJwtToken(ApplicationUser user)
     {
