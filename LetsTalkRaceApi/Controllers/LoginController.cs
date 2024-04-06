@@ -50,6 +50,7 @@ public class LoginController : LtrControllerBase
     {
         var user = new IdentityUser()
         {
+            Id = request.Id ?? Guid.NewGuid().ToString(),
             UserName = request.Email,
             Email = request.Email
         };
