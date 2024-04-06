@@ -1,11 +1,10 @@
 using System.Text;
 using LetsTalkRaceApi.Data;
-using LetsTalkRaceApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.Filters;
 
 namespace LetsTalkRaceApi;
 
@@ -25,7 +24,7 @@ public class Startup
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(connectionString));
 
-        services.AddDefaultIdentity<ApplicationUser>(options =>
+        services.AddDefaultIdentity<IdentityUser>(options =>
             {
                 options.SignIn.RequireConfirmedAccount = false; // Adjust this as needed
             })

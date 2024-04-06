@@ -1,6 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using LetsTalkRaceApi.Models;
 using LetsTalkRaceApi.Models.Requests;
 using LetsTalkRaceApi.Models.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -14,11 +13,11 @@ namespace LetsTalkRaceApi.Controllers;
 [Route("api/login/v1")]
 public class LoginController : LtrControllerBase
 {
-    private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<IdentityUser> _signInManager;
+    private readonly UserManager<IdentityUser> _userManager;
 
-    public LoginController(IConfiguration config, SignInManager<ApplicationUser> signInManager,
-        UserManager<ApplicationUser> userManager) : base(config)
+    public LoginController(IConfiguration config, SignInManager<IdentityUser> signInManager,
+        UserManager<IdentityUser> userManager) : base(config)
     {
         _signInManager = signInManager;
         _userManager = userManager;
@@ -49,10 +48,8 @@ public class LoginController : LtrControllerBase
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        var user = new ApplicationUser
+        var user = new IdentityUser()
         {
-            FirstName = request.FirstName,
-            LastName = request.LastName,
             UserName = request.Email,
             Email = request.Email
         };
@@ -166,10 +163,12 @@ public class LoginController : LtrControllerBase
         return Ok("Identity successfully deleted");
     }
     
-    private string CreateJwtToken(ApplicationUser user)
+    private string CreateJwtToken(IdentityUser user)
     {
-        List<Claim> claims = new List<Claim>()
+        var claims = new List<Claim>()
         {
+            new Claim(ClaimTypes.NameIdentifier, user.Id),
+            new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Name, user.UserName)
         };
 

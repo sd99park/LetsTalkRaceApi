@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Identity;
-
 namespace LetsTalkRaceApi.Models;
 
-public class ApplicationUser : IdentityUser
+public class Profile
 {
+    public string ProfileId { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
+    
 }
