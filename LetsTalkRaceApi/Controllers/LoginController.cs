@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using LetsTalkRaceApi.Models.Requests;
 using LetsTalkRaceApi.Models.Responses;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -9,18 +10,24 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace LetsTalkRaceApi.Controllers;
 
+// TODO: Better error handling
+// Throw 404's
+
 [ApiController]
 [Route("api/login/v1")]
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class LoginController : LtrControllerBase
 {
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly RoleManager<IdentityRole> _roleManager;
 
     public LoginController(IConfiguration config, SignInManager<IdentityUser> signInManager,
-        UserManager<IdentityUser> userManager) : base(config)
+        UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager) : base(config)
     {
         _signInManager = signInManager;
         _userManager = userManager;
+        _roleManager = roleManager;
     }
     
     [HttpPost]
@@ -39,7 +46,12 @@ public class LoginController : LtrControllerBase
         }
         
         var user = await _userManager.FindByNameAsync(request.UserName);
-        return Ok(CreateJwtToken(user));
+        var roles = await _userManager.GetRolesAsync(user);
+        if (roles.Count > 1)
+        {
+            throw new Exception("Multiple roles");
+        }
+        return Ok(CreateJwtToken(user, roles.FirstOrDefault() ?? "NONE"));
     }
     
     [HttpPost("register")]
@@ -48,24 +60,28 @@ public class LoginController : LtrControllerBase
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
+        // TODO: Test what happen if added with no role or non-existent role
         var user = new IdentityUser()
         {
-            Id = request.Id ?? Guid.NewGuid().ToString(),
             UserName = request.Email,
             Email = request.Email
         };
-
-        // TODO: Validate Access Code?
         
         var result = await _userManager.CreateAsync(user, request.Password);
-
         if (!result.Succeeded)
         {
             throw new Exception("There was an error creating identity");
         }
-        
+
         var createdUser = await _userManager.FindByEmailAsync(user.UserName);
-        return Ok(CreateJwtToken(createdUser));
+        
+        result = await _userManager.AddToRoleAsync(createdUser, request.Role);
+        if (!result.Succeeded)
+        {
+            throw new Exception("There was an error adding identity role identity");
+        }
+        
+        return Ok(CreateJwtToken(createdUser, request.Role));
     }
     
     [HttpGet, Authorize]
@@ -85,6 +101,7 @@ public class LoginController : LtrControllerBase
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
     public async Task<IActionResult> UpdateEmail(string identityId, [FromBody] string newEmail)
     {
+        // TODO: IdentityId must match callerId OR have super_admin perms
         // Idk if I actually want to send in previous email, added for now, can remove later
         
         var user = await _userManager.FindByIdAsync(identityId);
@@ -105,6 +122,7 @@ public class LoginController : LtrControllerBase
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
     public async Task<IActionResult> UpdateUserName(string identityId, [FromBody] string userName)
     {
+        // TODO: IdentityId must match callerId OR have super_admin perms
         var user = await _userManager.FindByIdAsync(identityId);
         
         var result = await _userManager.SetUserNameAsync(user, userName);
@@ -123,6 +141,7 @@ public class LoginController : LtrControllerBase
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
     public async Task<IActionResult> UpdatePassword(string identityId, [FromBody] UpdatePasswordRequest request)
     {
+        // TODO: IdentityId must match callerId OR have mega_admin perms
         var user = await _userManager.FindByIdAsync(identityId);
 
         var validOldPassword = await _userManager.CheckPasswordAsync(user, request.OldPassword);
@@ -147,30 +166,124 @@ public class LoginController : LtrControllerBase
         return Ok(new IdentityResponseDTO(user));
     }
 
-    [HttpDelete("user/{identityId}/deleteUser"), Authorize]
+    [HttpDelete("user/{identityId}/deleteUser"), Authorize(Roles = "ADMIN")]
     [ProducesResponseType(typeof(string), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
     public async Task<IActionResult> DeleteIdentity(string identityId)
     {
         var user = await _userManager.FindByIdAsync(identityId);
+        if (user == null)
+        {
+            throw new Exception($"User not found with id {identityId}");
+        }
 
         var result = await _userManager.DeleteAsync(user);
         if (!result.Succeeded)
         {
-            throw new Exception("There was an error updating identity Password");
+            throw new Exception("There was an error deleting identity");
         }
         
         return Ok("Identity successfully deleted");
     }
-    
-    private string CreateJwtToken(IdentityUser user)
+
+    [HttpPost, Authorize(Roles = "SUPER_ADMIN")]
+    [Route("role")]
+    [ProducesResponseType(typeof(string), 201)]
+    [ProducesResponseType(typeof(BadRequestResult), 400)]
+    [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
+    public async Task<IActionResult> CreateRole([FromBody] string roleName)
     {
+        var role = new IdentityRole
+        {
+            Name = roleName
+        };
+        await _roleManager.CreateAsync(role);
+
+        return Ok("Role Created");
+    }
+    
+    [HttpDelete, Authorize(Roles = "SUPER_ADMIN")]
+    [Route("role")]
+    [ProducesResponseType(typeof(string), 201)]
+    [ProducesResponseType(typeof(BadRequestResult), 400)]
+    [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
+    public async Task<IActionResult> DeleteRole([FromBody] string roleName)
+    {
+        var role = await _roleManager.FindByNameAsync(roleName);
+        if (role == null)
+        {
+            throw new Exception($"Role not found with name {roleName}");
+        }
+        
+        var result = await _roleManager.DeleteAsync(role);
+        if (!result.Succeeded)
+        {
+            throw new Exception("There was an error deleting role");
+        }
+
+        return Ok("Role Deleted");
+    }
+
+    [HttpPost, Authorize(Roles = "ADMIN")]
+    [Route("user/{identityId}/addRole")]
+    [ProducesResponseType(typeof(IdentityUser), 201)]
+    [ProducesResponseType(typeof(BadRequestResult), 400)]
+    [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
+    public async Task<IActionResult> AddIdentityRole(string identityId, [FromBody] string roleName)
+    {
+        Console.WriteLine("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        var user = await _userManager.FindByIdAsync(identityId); 
+        if (user == null)
+        {
+            throw new Exception($"User not found with id {identityId}");
+        }
+
+        var result = await _userManager.AddToRoleAsync(user, roleName);
+        if (!result.Succeeded)
+        {
+            throw new Exception("There was an error adding role to identity");
+        }
+        
+        var updatedUser = await _userManager.FindByIdAsync(identityId); 
+        
+        return Ok(updatedUser);
+    }
+
+    [HttpPost, Authorize(Roles = "ADMIN")]
+    [Route("user/{identityId}/removeRole")]
+    [ProducesResponseType(typeof(IdentityUser), 201)]
+    [ProducesResponseType(typeof(BadRequestResult), 400)]
+    [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
+    public async Task<IActionResult> RemoveIdentityRole(string identityId, [FromBody] string roleName)
+    {
+        var user = await _userManager.FindByIdAsync(identityId); 
+        if (user == null)
+        {
+            throw new Exception($"User not found with id {identityId}");
+        }
+        
+        var result = await _userManager.RemoveFromRoleAsync(user, roleName);
+        if (!result.Succeeded)
+        {
+            throw new Exception("There was an error removing role from identity");
+        }
+        
+        var updatedUser = await _userManager.FindByIdAsync(identityId);
+        return Ok(updatedUser);
+    }
+    
+    
+    private string CreateJwtToken(IdentityUser user, string role)
+    {
+        
+        // TODO: Add user role somehow
         var claims = new List<Claim>()
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Name, user.UserName)
+            new Claim(ClaimTypes.Name, user.UserName),
+            new Claim(ClaimTypes.Role, role)
         };
 
         var tokenConfig = _config.GetSection("AppSettings:Token").Value;

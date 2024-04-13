@@ -24,11 +24,12 @@ public class Startup
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(connectionString));
 
-        services.AddDefaultIdentity<IdentityUser>(options =>
+        services.AddIdentity<IdentityUser, IdentityRole>(options =>
             {
                 options.SignIn.RequireConfirmedAccount = false; // Adjust this as needed
             })
-            .AddEntityFrameworkStores<ApplicationDbContext>();
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddRoles<IdentityRole>();
 
         services.AddSwaggerGen(c =>
         {
@@ -75,6 +76,12 @@ public class Startup
             endpoints.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
+            
+            endpoints.MapControllerRoute(
+                name: "login",
+                pattern: "api/login/v1/{action=Index}/{id?}",
+                defaults: new { controller = "Login" });
+            
             endpoints.MapRazorPages();
         });
     }

@@ -8,7 +8,7 @@ using Npgsql;
 namespace LetsTalkRaceApi.Controllers;
 
 [ApiController]
-[Route("api/homework/v1")]
+[Route("api/homeworks/v1")]
 public class HomeworkController : LtrControllerBase
 {
     

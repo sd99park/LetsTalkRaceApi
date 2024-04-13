@@ -1,5 +1,4 @@
 using Npgsql;
-using LetsTalkRaceApi.Models;
 using LetsTalkRaceApi.Models.Requests;
 using NpgsqlTypes;
 
@@ -7,6 +6,8 @@ namespace LetsTalkRaceApi.Models.Helpers;
 
 public class PostgresCommandHelper
 {
+    
+    #region Homework Controller
     public static NpgsqlCommand GetHomeworkByHomeworkPage(NpgsqlConnection conn, string homeworkPage)
     {
         var cmd = new NpgsqlCommand(SqlStrings.GET_HOMEWORK_BY_HOMEWORK_PAGE, conn);
@@ -48,4 +49,6 @@ public class PostgresCommandHelper
         cmd.Prepare();
         return cmd;
     }
+    #endregion
+    
 }
