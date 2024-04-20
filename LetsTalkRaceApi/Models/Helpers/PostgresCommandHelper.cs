@@ -1,13 +1,14 @@
-using Npgsql;
-using LetsTalkRaceApi.Models.Requests;
+
+using Npgsql;using LetsTalkRaceApi.Models.Requests;
 using NpgsqlTypes;
 
 namespace LetsTalkRaceApi.Models.Helpers;
 
-public class PostgresCommandHelper
+public static class PostgresCommandHelper
 {
     
     #region Homework Controller
+    
     public static NpgsqlCommand GetHomeworkByHomeworkPage(NpgsqlConnection conn, string homeworkPage)
     {
         var cmd = new NpgsqlCommand(SqlStrings.GET_HOMEWORK_BY_HOMEWORK_PAGE, conn);
@@ -49,6 +50,45 @@ public class PostgresCommandHelper
         cmd.Prepare();
         return cmd;
     }
+    
+    #endregion
+    
+    #region Homework Controller
+
+    public static NpgsqlCommand GetAllProfiles(NpgsqlConnection conn)
+    {
+        var cmd = new NpgsqlCommand(SqlStrings.GET_ALL_PROFILES, conn);
+        cmd.Prepare();
+        return cmd;
+    }
+    
+    public static NpgsqlCommand GetProfileByProfileId(NpgsqlConnection conn, string profileId)
+    {
+        var cmd = new NpgsqlCommand(SqlStrings.GET_PROFILE, conn);
+        cmd.Parameters.AddWithValue(NpgsqlDbType.Varchar, profileId);
+        cmd.Prepare();
+        return cmd;
+    }
+
+    public static NpgsqlCommand InsertProfile(NpgsqlConnection conn, Profile profile)
+    {
+        var cmd = new NpgsqlCommand(SqlStrings.INSERT_PROFILE, conn);
+        cmd.Parameters.AddWithValue(NpgsqlDbType.Varchar, profile.ProfileId );
+        cmd.Parameters.AddWithValue(NpgsqlDbType.Varchar, profile.FirstName);
+        cmd.Parameters.AddWithValue(NpgsqlDbType.Varchar, profile.LastName);
+        cmd.Parameters.AddWithValue(NpgsqlDbType.Varchar, profile.EmailAddress);
+        cmd.Prepare();
+        return cmd;
+    }
+
+    public static NpgsqlCommand DeleteProfile(NpgsqlConnection conn, string profileId)
+    {
+        var cmd = new NpgsqlCommand(SqlStrings.DELETE_PROFILE, conn);
+        cmd.Parameters.AddWithValue(NpgsqlDbType.Varchar, profileId);
+        cmd.Prepare();
+        return cmd;
+    }
+    
     #endregion
     
 }

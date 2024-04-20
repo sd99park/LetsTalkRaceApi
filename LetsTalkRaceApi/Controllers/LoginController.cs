@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using LetsTalkRaceApi.Models;
 using LetsTalkRaceApi.Models.Requests;
 using LetsTalkRaceApi.Models.Responses;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -15,7 +16,7 @@ namespace LetsTalkRaceApi.Controllers;
 
 [ApiController]
 [Route("api/login/v1")]
-[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+// [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class LoginController : LtrControllerBase
 {
     private readonly SignInManager<IdentityUser> _signInManager;
@@ -54,6 +55,7 @@ public class LoginController : LtrControllerBase
         return Ok(CreateJwtToken(user, roles.FirstOrDefault() ?? "NONE"));
     }
     
+    // TODO: This needs some sort of perms to only allow use from ProfilesController 
     [HttpPost("register")]
     [ProducesResponseType(typeof(string), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
@@ -166,7 +168,8 @@ public class LoginController : LtrControllerBase
         return Ok(new IdentityResponseDTO(user));
     }
 
-    [HttpDelete("user/{identityId}/deleteUser"), Authorize(Roles = "ADMIN")]
+    [HttpDelete("user/{identityId}/deleteUser")]
+    // [Authorize(Roles = PermissionConstants.ADMIN)]
     [ProducesResponseType(typeof(string), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
@@ -187,7 +190,7 @@ public class LoginController : LtrControllerBase
         return Ok("Identity successfully deleted");
     }
 
-    [HttpPost, Authorize(Roles = "SUPER_ADMIN")]
+    [HttpPost, Authorize(Roles = PermissionConstants.SUPER_ADMIN)]
     [Route("role")]
     [ProducesResponseType(typeof(string), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
@@ -203,7 +206,7 @@ public class LoginController : LtrControllerBase
         return Ok("Role Created");
     }
     
-    [HttpDelete, Authorize(Roles = "SUPER_ADMIN")]
+    [HttpDelete, Authorize(Roles = PermissionConstants.SUPER_ADMIN)]
     [Route("role")]
     [ProducesResponseType(typeof(string), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
@@ -225,7 +228,7 @@ public class LoginController : LtrControllerBase
         return Ok("Role Deleted");
     }
 
-    [HttpPost, Authorize(Roles = "ADMIN")]
+    [HttpPost, Authorize(Roles = PermissionConstants.ADMIN)]
     [Route("user/{identityId}/addRole")]
     [ProducesResponseType(typeof(IdentityUser), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
@@ -250,7 +253,7 @@ public class LoginController : LtrControllerBase
         return Ok(updatedUser);
     }
 
-    [HttpPost, Authorize(Roles = "ADMIN")]
+    [HttpPost, Authorize(Roles = PermissionConstants.ADMIN)]
     [Route("user/{identityId}/removeRole")]
     [ProducesResponseType(typeof(IdentityUser), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]

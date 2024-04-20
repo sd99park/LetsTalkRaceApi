@@ -1,5 +1,8 @@
 using System.Text;
 using LetsTalkRaceApi.Data;
+using LetsTalkRaceApi.Implementations;
+using LetsTalkRaceApi.Interfaces;
+using LetsTalkRaceApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -43,6 +46,9 @@ public class Startup
             c.OperationFilter<AuthenticationRequirementsOperationFilter>();
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
         });
+
+        services.Configure<MailSettings>(Configuration.GetSection("MailSettings"));
+        services.AddTransient<IMailService, MailService>();
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>

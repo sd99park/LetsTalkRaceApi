@@ -2,6 +2,7 @@ using System.Text.Json;
 using LetsTalkRaceApi.Models;
 using LetsTalkRaceApi.Models.Helpers;
 using LetsTalkRaceApi.Models.Requests;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 
@@ -45,6 +46,7 @@ public class HomeworkController : LtrControllerBase
 
     [HttpPost]
     [Route("addHomework")]
+    [Authorize(Roles = PermissionConstants.ADMIN)]
     [ProducesResponseType(typeof(Homework), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
@@ -84,6 +86,7 @@ public class HomeworkController : LtrControllerBase
     
     [HttpPost]
     [Route("updateHomework")]
+    [Authorize(Roles = PermissionConstants.ADMIN)]
     [ProducesResponseType(typeof(Homework), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
@@ -124,6 +127,7 @@ public class HomeworkController : LtrControllerBase
     // Not to be used on FE, use for mass upload on initial create
     [HttpPost]
     [Route("addMultipleHomework")]
+    [Authorize(Roles = PermissionConstants.SUPER_ADMIN)]
     [ProducesResponseType(typeof(string), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
@@ -167,6 +171,7 @@ public class HomeworkController : LtrControllerBase
     
     [HttpDelete]
     [Route("removeHomework")]
+    [Authorize(Roles = PermissionConstants.ADMIN)]
     [ProducesResponseType(typeof(string), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
