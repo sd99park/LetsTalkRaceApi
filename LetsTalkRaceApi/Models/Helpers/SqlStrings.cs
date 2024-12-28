@@ -4,6 +4,9 @@ public static class SqlStrings
 {
     #region Homework Controller
     
+    public static string GET_ALL_HOMEWORKS =
+        "SELECT json_agg(a) FROM ( SELECT * FROM \"Homeworks\") a;";
+    
     public static string GET_HOMEWORK_BY_HOMEWORK_PAGE =
         "SELECT json_agg(a) FROM ( SELECT * FROM \"Homeworks\" WHERE \"HomeworkPage\" = @homeworkPage) a;";
             

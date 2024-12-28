@@ -9,6 +9,13 @@ public static class PostgresCommandHelper
     
     #region Homework Controller
     
+    public static NpgsqlCommand GetAllHomeworks(NpgsqlConnection conn)
+    {
+        var cmd = new NpgsqlCommand(SqlStrings.GET_ALL_HOMEWORKS, conn);
+        cmd.Prepare();
+        return cmd;
+    }
+    
     public static NpgsqlCommand GetHomeworkByHomeworkPage(NpgsqlConnection conn, string homeworkPage)
     {
         var cmd = new NpgsqlCommand(SqlStrings.GET_HOMEWORK_BY_HOMEWORK_PAGE, conn);

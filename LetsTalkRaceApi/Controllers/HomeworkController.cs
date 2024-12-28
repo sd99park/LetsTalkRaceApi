@@ -16,13 +16,42 @@ public class HomeworkController : LtrControllerBase
     public HomeworkController(IConfiguration config) : base(config)
     {
     }
+    
+    // TODO: Account for potential new class so new homework class types
+    
+    [HttpGet]
+    [Route("homework")]
+    [ProducesResponseType(typeof(List<Homework>), 201)]
+    [ProducesResponseType(typeof(BadRequestResult), 400)]
+    [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
+    public async Task<IActionResult> GetAllHomeworks()
+    {
+        NpgsqlConnection conn = null;
+
+        try
+        {
+            conn = OpenConnection();
+
+            var cmd = PostgresCommandHelper.GetAllHomeworks(conn);
+            var strResponse = Convert.ToString(cmd.ExecuteScalar());
+            var hws = string.IsNullOrWhiteSpace(strResponse) 
+                ? new List<Homework>() 
+                : JsonSerializer.Deserialize<List<Homework>>(strResponse);
+            
+            return Ok(hws);
+        }
+        finally
+        {
+            CloseConnection(conn);
+        } 
+    }
 
     [HttpGet]
     [Route("homework/{homeworkPage}")]
     [ProducesResponseType(typeof(List<Homework>), 201)]
     [ProducesResponseType(typeof(BadRequestResult), 400)]
     [ProducesResponseType(typeof(UnauthorizedObjectResult), 401)]
-    public async Task<IActionResult> GetAllHomework(string homeworkPage)
+    public async Task<IActionResult> GetByHomeworkPage(string homeworkPage)
     {
         NpgsqlConnection conn = null;
 
@@ -84,6 +113,7 @@ public class HomeworkController : LtrControllerBase
         }
     }
     
+    // TODO: this should take homeworkId
     [HttpPost]
     [Route("updateHomework")]
     [Authorize(Roles = PermissionConstants.ADMIN)]
